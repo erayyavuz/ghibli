@@ -1,15 +1,14 @@
 import { IncomingForm } from 'formidable';
 import { promises as fs } from 'fs';
-import sharp from 'sharp';
-import OpenAI from 'openai';
+import axios from 'axios';
+import sharp from 'sharp'; // Görüntü işleme için
 
+// formData parsing için config
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,6 +16,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Formdan gelen veriyi parse et
     const form = new IncomingForm();
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
@@ -25,29 +25,65 @@ export default async function handler(req, res) {
       });
     });
 
+    // Dosyayı oku
     const imageFile = files.image[0];
-
     const imageBuffer = await fs.readFile(imageFile.filepath);
-    const compressedImageBuffer = await sharp(imageBuffer)
-      .resize({ width: 1024, withoutEnlargement: true })
-      .jpeg({ quality: 80 })
-      .toBuffer();
+    
+    try {
+      // DALL-E 3 API'yi kullan
+      const response = await axios.post(
+        'https://api.openai.com/v1/images/generations',
+        {
+          model: 'dall-e-3',
+          prompt: 'Convert this to a Studio Ghibli style anime. Create a beautiful, whimsical Studio Ghibli animation style version with soft colors, detailed backgrounds, and the iconic Ghibli aesthetic. Maintain the original composition but transform it into a magical anime scene that looks like it could be from a Hayao Miyazaki film.',
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          timeout: 60000, // 60 saniye timeout
+        }
+      );
 
-    // Base64'e dönüştürülmüş görseli prompt ile gönder
-    const base64Image = compressedImageBuffer.toString('base64');
-
-    const response = await openai.images.generate({
-      model: 'dall-e-3',
-      prompt: 'Convert this photo to a studio ghibli style anime',
-      size: '1024x1024',
-      response_format: 'url',
-    });
-
-    const imageUrl = response.data[0].url;
-
-    return res.status(200).json({ url: imageUrl });
+      // Görüntü URL'ini al
+      const imageUrl = response.data.data[0].url;
+      
+      // Başarılı yanıt
+      return res.status(200).json({ url: imageUrl });
+    } catch (apiError) {
+      console.error('OpenAI API error:', apiError.response?.data || apiError.message);
+      
+      if (apiError.response) {
+        // API'den dönüş var, hata mesajını gönder
+        const statusCode = apiError.response.status;
+        let errorMessage = 'API işleminde bir hata oluştu.';
+        
+        if (statusCode === 429) {
+          errorMessage = 'OpenAI API hız sınırlamasına ulaşıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.';
+        } else if (statusCode === 400) {
+          errorMessage = 'Görsel formatı veya istek parametrelerinde bir sorun var. Başka bir görsel ile deneyiniz.';
+        } else if (statusCode === 401) {
+          errorMessage = 'API anahtarı geçersiz veya süresi dolmuş.';
+        }
+        
+        return res.status(statusCode).json({ 
+          error: errorMessage,
+          details: apiError.response.data ? JSON.stringify(apiError.response.data) : apiError.message
+        });
+      }
+      
+      // Genel hata
+      return res.status(500).json({ 
+        error: 'OpenAI API ile iletişim sırasında bir hata oluştu.', 
+        details: apiError.message 
+      });
+    }
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Server error:', error);
     return res.status(500).json({ error: 'İşlem başarısız oldu', details: error.message });
   }
 }
