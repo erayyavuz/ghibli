@@ -61,7 +61,7 @@ export default function Home() {
         </h1>
         
         <div className="bg-white p-6 rounded-lg shadow-md">
-          {/* Basit dosya yükleme alanı */}
+          {/* Dosya yükleme alanı */}
           <div className="mb-6">
             <label className="block text-gray-700 font-medium mb-2">
               Dönüştürmek istediğiniz görseli seçin:
@@ -79,16 +79,18 @@ export default function Home() {
             />
           </div>
           
-          {/* Önizleme alanı (sınırlı boyutlu) */}
+          {/* Önizleme alanı - Maksimum 200px genişlikte */}
           {previewUrl && (
             <div className="mb-6">
               <p className="text-gray-700 font-medium mb-2">Yüklenen Görsel:</p>
-              <div className="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                <img 
-                  src={previewUrl} 
-                  alt="Önizleme" 
-                  className="max-h-full max-w-full object-contain" 
-                />
+              <div className="flex justify-center">
+                <div className="w-48 h-48 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={previewUrl} 
+                    alt="Önizleme" 
+                    className="max-h-full max-w-full object-contain" 
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -124,21 +126,25 @@ export default function Home() {
             </div>
           )}
 
-          {/* Dönüştürülen görsel */}
+          {/* Dönüştürülen görsel - Sabit boyutta gösterim */}
           {convertedImage && !loading && (
             <div className="mt-8">
-              <h2 className="text-xl font-medium text-gray-800 mb-4">Ghibli Tarzında Görseliniz</h2>
-              <div className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                <img 
-                  src={convertedImage} 
-                  alt="Studio Ghibli tarzında dönüştürülmüş görsel" 
-                  className="max-h-full max-w-full object-contain" 
-                />
+              <h2 className="text-xl font-medium text-gray-800 mb-4 text-center">Ghibli Tarzında Görseliniz</h2>
+              <div className="flex justify-center">
+                <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={convertedImage} 
+                    alt="Studio Ghibli tarzında dönüştürülmüş görsel" 
+                    className="max-h-full max-w-full object-contain" 
+                  />
+                </div>
               </div>
               <div className="mt-4 flex justify-center">
                 <a 
                   href={convertedImage} 
                   download="ghibli-image.png"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Görseli İndir
