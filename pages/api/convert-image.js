@@ -33,12 +33,12 @@ export default async function handler(req, res) {
       .jpeg({ quality: 80 })
       .toBuffer();
 
+    // Base64'e dönüştürülmüş görseli prompt ile gönder
     const base64Image = compressedImageBuffer.toString('base64');
 
-    const response = await openai.images.edit({
-      image: compressedImageBuffer,
-      prompt: 'Convert this photo to a studio ghibli style anime',
+    const response = await openai.images.generate({
       model: 'dall-e-3',
+      prompt: 'Convert this photo to a studio ghibli style anime',
       size: '1024x1024',
       response_format: 'url',
     });
