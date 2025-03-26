@@ -29,43 +29,62 @@ export default async function handler(req, res) {
     const imageBuffer = await fs.readFile(imageFile.filepath);
     const base64Image = imageBuffer.toString('base64');
 
-    // ChatGPT-4o API'ye istek gönder
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Convert this photo to a studio ghibli style anime' },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/${imageFile.mimetype};base64,${base64Image}`,
+    try {
+      // ChatGPT-4o API'ye istek gönder
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Convert this photo to a studio ghibli style anime' },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/${imageFile.mimetype};base64,${base64Image}`,
+                  }
                 }
-              }
-            ]
-          }
-        ],
-        max_tokens: 4096,
-        response_format: { type: "image_url" }
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              ]
+            }
+          ],
+          max_tokens: 4096,
+          response_format: { type: "image_url" }
         },
-      }
-    );
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          timeout: 30000, // 30 saniye timeout ekleyelim
+        }
+      );
 
-    // API'den dönen görsel URL'sini al
-    const imageUrl = response.data.choices[0].message.content[0].image_url;
-    
-    // Görselin URL'sini döndür
-    return res.status(200).json({ url: imageUrl });
+      // API'den dönen görsel URL'sini al
+      const imageUrl = response.data.choices[0].message.content[0].image_url;
+      
+      // Görselin URL'sini döndür
+      return res.status(200).json({ url: imageUrl });
+    } catch (apiError) {
+      console.error('OpenAI API error:', apiError);
+      
+      // API rate limit hatası için özel mesaj
+      if (apiError.response && apiError.response.status === 429) {
+        return res.status(429).json({ 
+          error: 'OpenAI API hız sınırlamasına ulaşıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.',
+          details: 'Rate limit exceeded'
+        });
+      }
+      
+      // Diğer API hataları
+      return res.status(500).json({ 
+        error: 'OpenAI API işlem sırasında bir hata oluştu.', 
+        details: apiError.message 
+      });
+    }
   } catch (error) {
-    console.error('Error processing image:', error);
-    return res.status(500).json({ error: 'Image processing failed', details: error.message });
+    console.error('Server error:', error);
+    return res.status(500).json({ error: 'İşlem başarısız oldu', details: error.message });
   }
 }
