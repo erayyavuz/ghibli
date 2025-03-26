@@ -65,18 +65,35 @@ export default function Home() {
         </h1>
         
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <div 
-            {...getRootProps()} 
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors"
-          >
-            <input {...getInputProps()} />
-            {!image ? (
-              <div>
-                <p className="text-gray-600 mb-2">Görseli buraya sürükleyin veya tıklayıp seçin</p>
-                <p className="text-sm text-gray-500">PNG, JPG ve JPEG dosyaları desteklenir</p>
-              </div>
-            ) : (
-              <div className="relative h-64 w-full">
+          {/* Basit bir input ile görsel yükleme */}
+          <div className="mb-6">
+            <label htmlFor="image-upload" className="block text-gray-700 font-medium mb-2">
+              Dönüştürmek istediğiniz görseli seçin:
+            </label>
+            <input
+              type="file"
+              id="image-upload"
+              accept="image/*"
+              className="w-full p-2 border border-gray-300 rounded-md"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  setImage({
+                    file,
+                    preview: URL.createObjectURL(file)
+                  });
+                  setConvertedImage(null);
+                  setError(null);
+                }
+              }}
+            />
+          </div>
+
+          {/* Önizleme alanı */}
+          {image && (
+            <div className="mb-6">
+              <h3 className="text-gray-700 font-medium mb-2">Yüklenen Görsel:</h3>
+              <div className="relative h-64 w-full border rounded-md overflow-hidden">
                 <Image 
                   src={image.preview} 
                   alt="Yüklenen görsel" 
@@ -84,10 +101,10 @@ export default function Home() {
                   className="object-contain"
                 />
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="mt-6 flex justify-center">
+          <div className="flex justify-center">
             <button
               onClick={convertToGhibli}
               disabled={!image || loading}
