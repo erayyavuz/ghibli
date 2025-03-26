@@ -21,6 +21,19 @@ const nextConfig = {
       }
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://api.openai.com;"
+          }
+        ]
+      }
+    ]
+  }
 };
 
 module.exports = nextConfig;
