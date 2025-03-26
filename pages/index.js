@@ -35,13 +35,20 @@ export default function Home() {
       const response = await axios.post('/api/convert-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 60000 // 60 saniye timeout
       });
 
       setConvertedImage(response.data.url);
     } catch (err) {
       console.error('Error converting image:', err);
-      setError('Görsel dönüştürülürken bir hata oluştu. Lütfen tekrar deneyin.');
+      
+      // API'den gelen hata mesajlarını göster
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Görsel dönüştürülürken bir hata oluştu. Lütfen tekrar deneyin.');
+      }
     } finally {
       setLoading(false);
     }
@@ -61,7 +68,7 @@ export default function Home() {
         </h1>
         
         <div className="bg-white p-6 rounded-lg shadow-md">
-          {/* Dosya yükleme alanı */}
+          {/* Basit dosya yükleme alanı */}
           <div className="mb-6">
             <label className="block text-gray-700 font-medium mb-2">
               Dönüştürmek istediğiniz görseli seçin:
@@ -79,7 +86,7 @@ export default function Home() {
             />
           </div>
           
-          {/* Önizleme alanı - Maksimum 200px genişlikte */}
+          {/* Önizleme alanı (200px genişliğinde) */}
           {previewUrl && (
             <div className="mb-6">
               <p className="text-gray-700 font-medium mb-2">Yüklenen Görsel:</p>
@@ -115,7 +122,7 @@ export default function Home() {
             <div className="mt-8 flex flex-col items-center">
               <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
               <p className="mt-4 text-gray-600">Görseliniz Studio Ghibli tarzına dönüştürülüyor, lütfen bekleyin...</p>
-              <p className="mt-2 text-sm text-gray-500">Bu işlem 15-30 saniye sürebilir</p>
+              <p className="mt-2 text-sm text-gray-500">Bu işlem 30-60 saniye sürebilir</p>
             </div>
           )}
 
@@ -126,7 +133,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Dönüştürülen görsel - Sabit boyutta gösterim */}
+          {/* Dönüştürülen görsel */}
           {convertedImage && !loading && (
             <div className="mt-8">
               <h2 className="text-xl font-medium text-gray-800 mb-4 text-center">Ghibli Tarzında Görseliniz</h2>
