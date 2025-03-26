@@ -9,11 +9,15 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '**.oaistatic.com',
+      },
+      {
+        protocol: 'https', 
         hostname: '**.blob.core.windows.net',
       },
       {
         protocol: 'https',
-        hostname: '**.oaistatic.com',
+        hostname: '**.cloudfront.net',
       }
     ],
   },
