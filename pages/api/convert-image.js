@@ -1,7 +1,6 @@
 import { IncomingForm } from 'formidable';
 import { promises as fs } from 'fs';
 import axios from 'axios';
-import sharp from 'sharp'; // Görüntü işleme için
 
 // formData parsing için config
 export const config = {
@@ -27,10 +26,10 @@ export default async function handler(req, res) {
 
     // Dosyayı oku
     const imageFile = files.image[0];
-    const imageBuffer = await fs.readFile(imageFile.filepath);
     
     try {
       // DALL-E 3 API'yi kullan
+      console.log("DALL-E 3 API'ye istek gönderiliyor...");
       const response = await axios.post(
         'https://api.openai.com/v1/images/generations',
         {
@@ -49,6 +48,8 @@ export default async function handler(req, res) {
         }
       );
 
+      console.log("DALL-E 3 API yanıt verdi:", response.status);
+      
       // Görüntü URL'ini al
       const imageUrl = response.data.data[0].url;
       
@@ -66,6 +67,11 @@ export default async function handler(req, res) {
           errorMessage = 'OpenAI API hız sınırlamasına ulaşıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.';
         } else if (statusCode === 400) {
           errorMessage = 'Görsel formatı veya istek parametrelerinde bir sorun var. Başka bir görsel ile deneyiniz.';
+          
+          // Detaylı hata mesajı
+          if (apiError.response.data && apiError.response.data.error) {
+            errorMessage += ` Hata: ${apiError.response.data.error.message}`;
+          }
         } else if (statusCode === 401) {
           errorMessage = 'API anahtarı geçersiz veya süresi dolmuş.';
         }
