@@ -1,30 +1,26 @@
 import { useState } from 'react';
 import Head from 'next/head';
-import Image from 'next/image';
-import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 
 export default function Home() {
   const [image, setImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [convertedImage, setConvertedImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
-    },
-    multiple: false,
-    onDrop: acceptedFiles => {
-      const file = acceptedFiles[0];
-      setImage({
-        file,
-        preview: URL.createObjectURL(file)
-      });
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setImage(selectedFile);
+      
+      // Önizleme URL'sini oluştur
+      const objectUrl = URL.createObjectURL(selectedFile);
+      setPreviewUrl(objectUrl);
       setConvertedImage(null);
       setError(null);
     }
-  });
+  };
 
   const convertToGhibli = async () => {
     if (!image) return;
@@ -34,7 +30,7 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      formData.append('image', image.file);
+      formData.append('image', image);
 
       const response = await axios.post('/api/convert-image', formData, {
         headers: {
@@ -65,46 +61,40 @@ export default function Home() {
         </h1>
         
         <div className="bg-white p-6 rounded-lg shadow-md">
-          {/* Basit bir input ile görsel yükleme */}
+          {/* Basit dosya yükleme alanı */}
           <div className="mb-6">
-            <label htmlFor="image-upload" className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-700 font-medium mb-2">
               Dönüştürmek istediğiniz görseli seçin:
             </label>
             <input
               type="file"
-              id="image-upload"
               accept="image/*"
-              className="w-full p-2 border border-gray-300 rounded-md"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  const file = e.target.files[0];
-                  setImage({
-                    file,
-                    preview: URL.createObjectURL(file)
-                  });
-                  setConvertedImage(null);
-                  setError(null);
-                }
-              }}
+              onChange={handleImageChange}
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-medium
+                file:bg-indigo-50 file:text-indigo-700
+                hover:file:bg-indigo-100"
             />
           </div>
-
-          {/* Önizleme alanı */}
-          {image && (
+          
+          {/* Önizleme alanı (sınırlı boyutlu) */}
+          {previewUrl && (
             <div className="mb-6">
-              <h3 className="text-gray-700 font-medium mb-2">Yüklenen Görsel:</h3>
-              <div className="relative h-64 w-full border rounded-md overflow-hidden">
-                <Image 
-                  src={image.preview} 
-                  alt="Yüklenen görsel" 
-                  fill
-                  className="object-contain"
+              <p className="text-gray-700 font-medium mb-2">Yüklenen Görsel:</p>
+              <div className="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                <img 
+                  src={previewUrl} 
+                  alt="Önizleme" 
+                  className="max-h-full max-w-full object-contain" 
                 />
               </div>
             </div>
           )}
 
-          <div className="flex justify-center">
+          {/* Dönüştürme butonu */}
+          <div className="mt-6 flex justify-center">
             <button
               onClick={convertToGhibli}
               disabled={!image || loading}
@@ -118,6 +108,7 @@ export default function Home() {
             </button>
           </div>
 
+          {/* Loading göstergesi */}
           {loading && (
             <div className="mt-8 flex flex-col items-center">
               <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -126,21 +117,22 @@ export default function Home() {
             </div>
           )}
 
+          {/* Hata mesajı */}
           {error && (
             <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-lg">
               {error}
             </div>
           )}
 
+          {/* Dönüştürülen görsel */}
           {convertedImage && !loading && (
             <div className="mt-8">
               <h2 className="text-xl font-medium text-gray-800 mb-4">Ghibli Tarzında Görseliniz</h2>
-              <div className="relative h-96 w-full">
-                <Image 
+              <div className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                <img 
                   src={convertedImage} 
                   alt="Studio Ghibli tarzında dönüştürülmüş görsel" 
-                  fill
-                  className="object-contain rounded-lg"
+                  className="max-h-full max-w-full object-contain" 
                 />
               </div>
               <div className="mt-4 flex justify-center">
